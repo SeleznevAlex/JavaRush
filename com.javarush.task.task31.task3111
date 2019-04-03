@@ -1,0 +1,101 @@
+//SearchFileVisitor.java
+package com.javarush.task.task31.task3111;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SearchFileVisitor extends SimpleFileVisitor<Path> {
+
+    private String partOfName ;
+    private String partOfContent;
+    private int  minSize;
+    private int maxSize;
+    private List<Path> foundFiles = new ArrayList<>();
+    private boolean isSelectedPartOfNameFile;
+    private boolean isSelectedPartOfContent;
+    private boolean isSelectedMinSize;
+    private boolean isSelectedMaxSize;
+
+    public void setPartOfName(String partOfName) {
+        this.partOfName = partOfName;
+        isSelectedPartOfNameFile = true;
+    }
+
+    public void setPartOfContent(String partOfContent) {
+        this.partOfContent = partOfContent;
+        isSelectedPartOfContent = true;
+    }
+
+    public void setMinSize(int minSize) {
+        this.minSize = minSize;
+        isSelectedMinSize = true;
+    }
+
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
+        isSelectedMaxSize = true;
+    }
+
+    public List<Path> getFoundFiles() {
+        return foundFiles;
+    }
+
+    @Override
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        byte[] content = Files.readAllBytes(file);
+        String strContent = new String(content);
+
+        if ( isSelectedMinSize && minSize > content.length)
+          return FileVisitResult.CONTINUE;                                               // more MIN
+
+        if ( isSelectedMaxSize && content.length > maxSize)
+          return FileVisitResult.CONTINUE;                                               // less MAX
+
+        if (isSelectedPartOfNameFile && !file.getFileName().toString().contains(partOfName))
+          return FileVisitResult.CONTINUE;                                               //find file NAME
+
+        if (isSelectedPartOfContent && !strContent.contains(partOfContent))
+          return FileVisitResult.CONTINUE;                                               //find INTO file
+
+        foundFiles.add(file);
+        return super.visitFile(file, attrs);
+    }
+}
+
+//Solution.java
+package com.javarush.task.task31.task3111;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+/* 
+Продвинутый поиск файлов
+*/
+public class Solution {
+
+    public static void main(String[] args) throws IOException {
+        SearchFileVisitor searchFileVisitor = new SearchFileVisitor();
+
+        searchFileVisitor.setPartOfName("amigo");
+        searchFileVisitor.setPartOfContent("programmer");
+        searchFileVisitor.setMinSize(500);
+        searchFileVisitor.setMaxSize(10000);
+
+        Files.walkFileTree(Paths.get("C:/java_test/"), searchFileVisitor);
+
+        List<Path> foundFiles = searchFileVisitor.getFoundFiles();
+        for (Path file : foundFiles) {
+            System.out.println(file);
+        }
+    }
+}
